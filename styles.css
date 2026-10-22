@@ -34,3 +34,6 @@
 .project-fund-info{color:#205f4d;background:#eaf6ed;border:1px solid #c7e5d0;border-radius:11px;padding:6px 11px;margin:8px 0;overflow-wrap:anywhere}
 .field-tip{font-size:16px;color:#597568;line-height:1.35}
 @media print{.print-pills strong{overflow-wrap:anywhere}}
+
+/* V5: non-budget project is a classification, not an expense source. */
+.field input[readonly]{background:#edf5ef;color:#446557;cursor:not-allowed}
