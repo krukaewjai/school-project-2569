@@ -1,4 +1,4 @@
-/* โรงเรียนบ้านคอกม้า | รายงานโครงการปีการศึกษา 2569 | Supabase JS v3
+/* โรงเรียนบ้านคอกม้า | รายงานโครงการปีการศึกษา 2569 | Supabase JS v4
    No build step; all user-entered HTML is escaped; access is checked by database RLS. */
 (() => {
   'use strict';
@@ -16,6 +16,28 @@
   const PAGE_SIZE = 10;
   const BUCKET = 'project-pdfs-2569';
   const cfg = window.APP_CONFIG || {};
+  // ชื่อผู้ใช้ใหม่จะผูกกับอีเมลภายในที่ผู้ดูแลสร้างไว้ใน Supabase Auth
+  // ใส่โดเมนที่ระบบกำหนดไว้เท่านั้น (ไม่ต้องเปลี่ยนหากใช้ค่าเริ่มต้น)
+  const USERNAME_EMAIL_DOMAIN = String(cfg.USERNAME_EMAIL_DOMAIN || 'staff.school-project.example').trim().toLowerCase();
+  const USERNAME_PATTERN = /^[a-z][a-z0-9_-]{2,31}$/;
+  function resolveLoginEmail(input) {
+    const value = String(input || '').trim().toLowerCase();
+    if (value.includes('@')) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        throw new Error('กรุณากรอกอีเมลให้ถูกต้อง');
+      }
+      // บัญชีที่สร้างก่อน V4 ยังเข้าสู่ระบบด้วยอีเมลเดิมได้
+      return value;
+    }
+    if (!USERNAME_PATTERN.test(value)) {
+      throw new Error('ชื่อผู้ใช้ต้องมี 3–32 ตัวอักษร เริ่มด้วย a-z และใช้ได้เฉพาะ a-z, 0-9, _ หรือ -');
+    }
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(USERNAME_EMAIL_DOMAIN)) {
+      throw new Error('ชื่อโดเมนสำหรับ Username ใน config.js ไม่ถูกต้อง');
+    }
+    return `${value}@${USERNAME_EMAIL_DOMAIN}`;
+  }
+
   const el = document.getElementById('app');
   const modal = document.getElementById('modal-host');
   const toastEl = document.getElementById('toast');
@@ -94,7 +116,7 @@
   }
   function showSetup(message){el.innerHTML=`<div class="login-wrap"><div class="glass login-card"><div class="horse">⚙️</div><h1>ตั้งค่าระบบก่อนใช้งาน</h1><p>${escapeHtml(message)}</p><p class="login-tip">รายละเอียดอยู่ในไฟล์ README.md ภายในชุดดาวน์โหลด</p></div></div>`;}
   function showLogin(message=''){
-    el.innerHTML=`<div class="login-wrap"><section class="glass login-card"><div class="horse">🐴🏫</div><h1>ระบบรายงานโครงการ</h1><h2>ประจำปีการศึกษา ${escapeHtml(cfg.ACADEMIC_YEAR||'2569')}</h2><p>${escapeHtml(cfg.SCHOOL_NAME||'โรงเรียน')}</p><form id="login-form"><div class="field"><label for="login-email">อีเมลเจ้าหน้าที่</label><input id="login-email" type="email" name="email" autocomplete="username" required></div><div class="field" style="margin-top:13px"><label for="login-password">รหัสผ่าน</label><input id="login-password" type="password" name="password" autocomplete="current-password" required minlength="6"></div><div class="form-actions"><button class="btn primary" type="submit" style="width:100%">🔐 เข้าสู่ระบบ</button></div></form>${message?`<p class="login-tip" style="color:#ad3538">${escapeHtml(message)}</p>`:''}<p class="login-tip">สำหรับบัญชีเจ้าหน้าที่ที่ได้รับอนุญาตเท่านั้น</p><button type="button" class="btn ghost" data-action="view-as-guest">👀 กลับไปดูรายงานโดยไม่เข้ารหัส</button></section></div>`;
+    el.innerHTML=`<div class="login-wrap"><section class="glass login-card"><div class="horse">🐴🏫</div><h1>ระบบรายงานโครงการ</h1><h2>ประจำปีการศึกษา ${escapeHtml(cfg.ACADEMIC_YEAR||'2569')}</h2><p>${escapeHtml(cfg.SCHOOL_NAME||'โรงเรียน')}</p><form id="login-form"><div class="field"><label for="login-identifier">ชื่อผู้ใช้ (Username)</label><input id="login-identifier" type="text" name="identifier" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="เช่น kaew01 (หรืออีเมลเดิม)" required></div><div class="field" style="margin-top:13px"><label for="login-password">รหัสผ่าน</label><input id="login-password" type="password" name="password" autocomplete="current-password" required minlength="6"></div><div class="form-actions"><button class="btn primary" type="submit" style="width:100%">🔐 เข้าสู่ระบบ</button></div></form>${message?`<p class="login-tip" style="color:#ad3538">${escapeHtml(message)}</p>`:''}<p class="login-tip">สำหรับบัญชีเจ้าหน้าที่ที่ได้รับอนุญาตเท่านั้น • ผู้ชมไม่ต้องเข้าสู่ระบบ</p><button type="button" class="btn ghost" data-action="view-as-guest">👀 กลับไปดูรายงานโดยไม่เข้ารหัส</button></section></div>`;
   }
   function base(){
     return `<div class="layout"><header class="glass topbar"><div class="brand"><div class="logo">🏫🐴</div><div><h1>ระบบรายงานโครงการ</h1><small>${escapeHtml(cfg.SCHOOL_NAME||'โรงเรียน')} • ประจำปีการศึกษา ${escapeHtml(cfg.ACADEMIC_YEAR||'2569')}</small></div></div><div class="top-actions">${member?`<span class="muted">👤 ${escapeHtml(member.full_name||currentUser?.email||'ครูผู้บันทึก')}</span><button type="button" class="btn ghost sm" data-action="logout">🚪 ออกจากระบบ</button>`:`<span class="viewer-tag">👀 โหมดเข้าชม</span><button type="button" class="btn primary sm" data-action="login">🔐 ครูเข้าสู่ระบบ</button>`}</div></header><nav class="nav"><button class="nav-btn ${state.tab==='dashboard'?'active':''}" data-action="nav-dashboard">📊 แดชบอร์ด</button><button class="nav-btn ${state.tab==='projects'?'active':''}" data-action="nav-projects">📁 รายงานโครงการ</button>${state.tab==='detail'?'<button class="nav-btn active" data-action="noop">📋 รายละเอียดโครงการ</button>':''}</nav><main id="main-content"></main><footer class="footer">📚 ระบบรายงานโครงการ • เปิดดูข้อมูลได้โดยไม่ต้องเข้าสู่ระบบ • การแก้ไขต้องได้รับสิทธิ์เจ้าหน้าที่</footer></div>`;
@@ -297,7 +319,7 @@
     const f=ev.target;if(!(f instanceof HTMLFormElement))return;ev.preventDefault();if(busy)return;
     if(f.id==='login-form'){
       await run(async()=>{
-        const fd=new FormData(f);const {data,error}=await client.auth.signInWithPassword({email:String(fd.get('email')).trim(),password:String(fd.get('password'))});
+        const fd=new FormData(f);const email=resolveLoginEmail(fd.get('identifier'));const {data,error}=await client.auth.signInWithPassword({email,password:String(fd.get('password'))});
         if(error)throw error;currentUser=data.user;
         if(await ensureAllowed()){await loadData();showToast('เข้าสู่ระบบสำหรับบันทึกข้อมูลสำเร็จ');}
         else await loadData();
