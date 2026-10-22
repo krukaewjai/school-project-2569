@@ -25,3 +25,12 @@
   .print-paper .nowrap{white-space:nowrap}
   .print-paper .ellipsis{overflow-wrap:anywhere}
 }
+
+/* Public viewing indicator */
+.viewer-tag{display:inline-flex;align-items:center;border:1px solid #b8d9cf;border-radius:24px;padding:5px 12px;background:rgba(229,246,240,.95);font-size:17px;font-weight:bold;color:#175543}
+
+/* V3: funding allocation labels */
+.fund-label{color:#256d58;font-weight:700;margin:3px 0;overflow-wrap:anywhere}
+.project-fund-info{color:#205f4d;background:#eaf6ed;border:1px solid #c7e5d0;border-radius:11px;padding:6px 11px;margin:8px 0;overflow-wrap:anywhere}
+.field-tip{font-size:16px;color:#597568;line-height:1.35}
+@media print{.print-pills strong{overflow-wrap:anywhere}}
